@@ -9,7 +9,8 @@ from . import resnet as models
 from . import utils
 from .debug import dump, fast_dump, plot_bin_hist, write_errors, fast_dump_2, variance_profile, get_var, \
     plot_weight_hist
-
+import time
+import matplotlib.pyplot as plt
 try:
     from apex.parallel import DistributedDataParallel as DDP
     from apex.fp16_utils import *
@@ -330,14 +331,17 @@ def calc_ips(batch_size, time):
 def train_loop(model_and_loss, optimizer, lr_scheduler, train_loader, val_loader, debug_loader, epochs,
                fp16, logger, should_backup_checkpoint, use_amp=False, batch_size_multiplier=1,
                best_prec1=0, start_epoch=0, prof=-1, skip_training=False, skip_validation=False,
-               save_checkpoints=True, checkpoint_dir='./'):
+               save_checkpoints=True, checkpoint_dir='./', args=None):
     prec1 = -1
 
     epoch_iter = range(start_epoch, epochs)
+    plt_log = log.PLTLOGGER(os.path.join(args.workspace, '..'))
+
     if logger is not None:
         epoch_iter = logger.epoch_generator_wrapper(epoch_iter)
     for epoch in epoch_iter:
         print('Epoch ', epoch)
+        start_time = time.time()
         if not skip_training:
             train(train_loader, model_and_loss, optimizer, lr_scheduler, fp16, logger, epoch, use_amp=use_amp,
                   prof=prof, register_metrics=epoch == start_epoch, batch_size_multiplier=batch_size_multiplier)
@@ -345,6 +349,7 @@ def train_loop(model_and_loss, optimizer, lr_scheduler, train_loader, val_loader
         if not skip_validation:
             prec1 = validate(val_loader, model_and_loss, fp16, logger, epoch, prof=prof,
                              register_metrics=epoch == start_epoch)
+            plt_log.plt_valid(epoch, prec1)
 
         if save_checkpoints and (not torch.distributed.is_initialized() or torch.distributed.get_rank() == 0):
             if not skip_training:
@@ -365,7 +370,8 @@ def train_loop(model_and_loss, optimizer, lr_scheduler, train_loader, val_loader
 
         if not torch.distributed.is_initialized() or torch.distributed.get_rank() == 0:
             logger.end()
-
+        end_time = time.time()
+        print("Time Cost: {} s".format(end_time - start_time))
     if skip_training:
         # fast_dump_2(model_and_loss, optimizer, train_loader, checkpoint_dir)
         # dump(model_and_loss, optimizer, train_loader, checkpoint_dir)

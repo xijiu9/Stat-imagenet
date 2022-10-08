@@ -1,7 +1,8 @@
 import random
 import json
 from collections import OrderedDict
-
+import matplotlib.pyplot as plt
+import os
 
 class IterationMeter(object):
     def __init__(self):
@@ -156,6 +157,8 @@ class Logger(object):
         for b in self.backends:
             b.end()
 
+
+
     def iteration_generator_wrapper(self, gen, val = False):
         for g in gen:
             self.start_iteration(val = val)
@@ -167,6 +170,7 @@ class Logger(object):
             self.start_epoch()
             yield g
             self.end_epoch()
+
 
 
 class JsonBackend(object):
@@ -295,5 +299,18 @@ class StdOutBackend(object):
 
     def end(self):
         pass
+
+class PLTLOGGER(object):
+    def __init__(self, save_path):
+        self.save_path = save_path
+        self.plt_epoch = []
+        self.plt_prec1 = []
+
+    def plt_valid(self, epoch=None, prec=None):
+        self.plt_epoch.append(epoch)
+        self.plt_prec1.append(prec)
+        plt.scatter(self.plt_epoch, self.plt_prec1, s=2)
+        plt.title(max(self.plt_prec1))
+        plt.savefig(os.path.join(self.save_path, 'valid_curve.png'))
 
 

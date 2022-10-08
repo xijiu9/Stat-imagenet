@@ -79,3 +79,13 @@ If you find this repo useful, please cite our paper.
   year={2020}
 }
 ```
+
+
+Some Notes
+----
+
+Training Speed
+```
+resnet18 imagenet       4500ips
+resnet50 imagenet amp   3200ips
+```
