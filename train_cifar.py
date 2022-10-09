@@ -25,7 +25,7 @@ parser.add_argument('--checkpoint_epoch_full_precision', type=int, default=0, he
 parser.add_argument('--clip-grad', type=str2bool, default=False, help='clip gradient to 0.01(CIFAR)')
 
 parser.add_argument('--lr', type=float, default=0.1, help='clip gradient to 0.01(CIFAR)')
-parser.add_argument('--weight-decay', '--wd', default=3.0517578125e-05, type=float, metavar='W', help='weight decay (default: 1e-4)')
+parser.add_argument('--weight-decay', '--wd', default=1e-4, type=float, metavar='W', help='weight decay (default: 1e-4)')
 parser.add_argument('--warmup', default=20, type=int, metavar='E', help='number of warmup epochs')
 args = parser.parse_args()
 
@@ -71,10 +71,10 @@ else:
     model = 'pass'
 
 os.system("python ./main.py --arch preact_resnet56 --gather-checkpoints \
-            --lr {} --resume {} --dataset cifar10 --momentum 0.9 --weight-decay 1e-4 --epoch 200\
+            --lr {} --resume {} --dataset cifar10 --momentum 0.9 --weight-decay {} --epoch 200\
             --warmup {} {}  ~/data/cifar10 --workspace ./results/cifar/{}/models \
             --amp --static-loss-scale 128 --print-freq 100 \
-            --bbits {} --bwbits {} --abits {} --wbits {} --weight-decay {}"
-            .format(args.lr, model,
+            --bbits {} --bwbits {} --abits {} --wbits {}"
+            .format(args.lr, model, args.weight_decay,
                     args.warmup, arg, args.training_bit,
-                    bbits, bwbits, awbits, awbits, args.weight_decay))
+                    bbits, bwbits, awbits, awbits))
